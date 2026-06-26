@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Önéletrajz készítő</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root{
+    --accent:#0d9488;
+    --bg:#0f1115; --panel:#171a21; --panel-2:#1e222b; --line:#2a2f3a;
+    --txt:#e7ebf0; --muted:#9aa3b2; --field:#11141a; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased}
+
+  .app{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:100vh}
+  @media (max-width:900px){.app{grid-template-columns:1fr;height:auto}.preview-col{height:auto !important}}
+
+  /* EDITOR */
+  .editor{overflow-y:auto;border-right:1px solid var(--line);background:var(--bg)}
+  .topbar{position:sticky;top:0;z-index:5;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);padding:14px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .topbar h1{font-size:15px;margin:0;font-weight:600;flex:1}
+  .topbar h1 span{color:var(--accent)}
+  .btn{border:1px solid var(--line);background:var(--panel-2);color:var(--txt);padding:8px 12px;border-radius:9px;
+    font-size:12.5px;cursor:pointer;font-weight:500;transition:.15s;white-space:nowrap}
+  .btn:hover{border-color:var(--accent)}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-primary:hover{filter:brightness(1.1)}
+  .btn-ghost{background:transparent}
+  .editor-body{padding:14px 18px 80px}
+
+  details.section{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;background:var(--panel);overflow:hidden}
+  details.section>summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:600;font-size:13.5px;
+    display:flex;align-items:center;gap:10px;user-select:none}
+  details.section>summary::-webkit-details-marker{display:none}
+  .sec-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .sec-arrow{margin-left:auto;color:var(--muted);transition:.2s;font-size:11px}
+  details[open]>summary .sec-arrow{transform:rotate(90deg)}
+  .sec-inner{padding:4px 16px 18px}
+
+  label.fld{display:block;margin:11px 0 5px;font-size:11.5px;color:var(--muted);font-weight:500}
+  input,textarea,select{width:100%;background:var(--field);border:1px solid var(--line);color:var(--txt);
+    border-radius:9px;padding:10px 11px;font-size:13px;font-family:inherit;outline:none;transition:.15s}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:64px;line-height:1.5}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  .item-card{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px;background:var(--panel-2);position:relative}
+  .item-card .del{position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--muted);
+    cursor:pointer;font-size:16px;line-height:1;padding:4px;border-radius:6px}
+  .item-card .del:hover{color:#ff6b6b;background:rgba(255,107,107,.1)}
+  .add-btn{margin-top:12px;width:100%;border:1px dashed var(--line);background:transparent;color:var(--muted);
+    padding:10px;border-radius:9px;cursor:pointer;font-size:12.5px;transition:.15s}
+  .add-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+  .swatches{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  .sw{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.15s}
+  .sw.active{border-color:#fff;box-shadow:0 0 0 2px var(--bg),0 0 0 4px currentColor}
+  .photo-row{display:flex;gap:12px;align-items:center;margin-top:6px}
+  .photo-prev{width:58px;height:58px;border-radius:10px;background:var(--field);border:1px solid var(--line);
+    background-size:cover;background-position:center;flex-shrink:0}
+  .mini{font-size:11px;color:var(--muted);margin-top:4px}
+
+  /* PREVIEW */
+  .preview-col{background:#2a2d34;overflow:auto;height:100vh;display:flex;flex-direction:column}
+  .preview-bar{padding:10px 16px;color:var(--muted);font-size:12px;border-bottom:1px solid #00000033}
+  .preview-wrap{padding:24px 16px;display:flex;justify-content:center}
+  .scaler{transform-origin:top center}
+
+  /* ===== CV (A4) — modern, kétoszlopos ===== */
+  .cv{width:210mm;min-height:297mm;background:#fff;color:#374151;
+    display:grid;grid-template-columns:60mm 1fr;
+    box-shadow:0 12px 40px rgba(0,0,0,.4);
+    font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:9.8pt;line-height:1.55}
+
+  .cv-left{background:#f8f9fa;padding:14mm 9mm 14mm 11mm}
+  .cv-right{padding:14mm 13mm 14mm 12mm}
+
+  .l-photo{width:32mm;height:32mm;border-radius:50%;object-fit:cover;display:block;margin:0 auto 8mm;
+    border:3px solid #fff;box-shadow:0 0 0 1px #e5e7eb;background:#eef0f2}
+  .l-h{color:var(--accent);font-size:9pt;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin:8mm 0 3mm}
+  .l-h:first-of-type{margin-top:0}
+  .l-h::after{content:"";display:block;width:8mm;height:2px;background:var(--accent);margin-top:1.5mm;border-radius:2px;opacity:.9}
+  .l-about{font-size:8.6pt;color:#6b7280;line-height:1.6}
+  .l-field{margin-bottom:3mm}
+  .l-field .k{font-size:8.5pt;font-weight:600;color:#374151}
+  .l-field .v{font-size:8.5pt;color:#9ca3af;margin-top:.4mm}
+  .l-lang{font-size:8.7pt;color:#4b5563;padding:1.8mm 0;border-bottom:1px solid #e8eaed;display:flex;justify-content:space-between;gap:6px}
+  .l-lang em{color:#b6bcc4;font-style:normal;font-size:8pt}
+  .l-hobbi{font-size:8.7pt;color:#4b5563;line-height:1.8}
+
+  .r-header{margin-bottom:7mm}
+  .r-top{display:flex;justify-content:space-between;gap:8mm;align-items:flex-start}
+  .r-name{font-size:19pt;font-weight:600;letter-spacing:.5px;color:#1f2937;line-height:1.15}
+  .r-title{font-size:9.5pt;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-top:2mm;font-weight:600}
+  .r-contact{font-size:8.3pt;color:#6b7280;display:flex;flex-direction:column;gap:2.4mm;min-width:46mm;max-width:60mm}
+  .r-ci{display:flex;gap:7px;align-items:flex-start}
+  .r-ic{width:14px;height:14px;border-radius:50%;background:var(--accent);color:#fff;font-size:8px;
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .r-ci span{white-space:pre-line;word-break:break-word;line-height:1.4}
+
+  .r-h{font-size:10pt;font-weight:700;color:#1f2937;text-transform:uppercase;letter-spacing:1.5px;
+    margin:8mm 0 4.5mm;display:flex;align-items:center;gap:8px}
+  .r-h::before{content:"";width:4mm;height:2.5px;background:var(--accent);border-radius:2px;flex-shrink:0}
+  .r-h::after{content:"";flex:1;height:1px;background:#ececec}
+
+  .x-entry{display:grid;grid-template-columns:30mm 1fr;gap:6mm;margin-bottom:6mm;page-break-inside:avoid}
+  .x-company{font-weight:600;color:#374151;font-size:9.2pt;line-height:1.3}
+  .x-place,.x-date{font-size:8.2pt;color:#9ca3af;margin-top:1mm}
+  .x-title{font-weight:600;color:#1f2937;font-size:9.8pt;display:flex;align-items:center;gap:7px}
+  .x-title .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .x-desc{color:#6b7280;font-size:8.8pt;margin-top:1.6mm;white-space:pre-line;line-height:1.55}
+
+  .r-skills{display:grid;grid-template-columns:1fr 1fr;gap:2.6mm 9mm}
+  .r-skill{font-size:8.8pt;color:#4b5563;padding-bottom:1.8mm;border-bottom:1px solid #ececec;display:flex;align-items:center;gap:7px}
+  .r-skill::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .empty-hint{color:#c4c4c4;font-style:italic;font-size:8.8pt}
+
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#3a3f4a;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- EDITOR -->
+  <div class="editor">
+    <div class="topbar">
+      <h1>Önéletrajz<span> készítő</span></h1>
+      <button class="btn btn-ghost" id="sampleBtn">Minta</button>
+      <button class="btn btn-ghost" id="clearBtn">Ürítés</button>
+      <button class="btn btn-primary" id="dlBtn">⤓ PDF letöltése</button>
+    </div>
+
+    <div class="editor-body">
+
+      <details class="section" open>
+        <summary><span class="sec-dot"></span>Személyes adatok<span class="sec-arrow">▶</span></summary>
+        <div class="sec-inner">
+          <div class="photo-row">
+            <div class="photo-prev" id="photoPrev"></div>
+            <div>
+              <input type="file" id="photoInput" accept="image/*" style="font-size:11px;padding:7px">
+              <div class="mini">Kör alakú fénykép. <a href="#" id="photoClear" style="color:var(--accent)">törlés</a></div>
+            </div>
+          </div>
+          <label class="fld">Teljes név</label><input data-k="name" placeholder="Herman Zsolt">
+          <label class="fld">Pozíció / titulus</label><input data-k="title" placeholder="Raktáros">
+          <div class="row2">
+            <div><label class="fld">E-mail</label><input data-k="email" placeholder="nev@email.hu"></div>
+            <div><label class="fld">Telefon</label><input data-k="phone" placeholder="06 00 000 0000"></div>
+          </div>
+          <label class="fld">Cím</label><textarea data-k="address" placeholder="Irányítószám, város, utca, ország"></textarea>
+          <label class="fld">Kiemelőszín</label><div class="swatches" id="swatches"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary><span class="sec-dot"></span>Rólam<span class="sec-arrow">▶</span></summary>
+        <div class="sec-inner">
+          <label class="fld">Rövid bemutatkozás</label>
+          <textarea data-k="summary" placeholder="2-4 mondat magadról."></textarea>
+        </div>
+      </details>
+
+      <details class="section">
+        <summary><span class="sec-dot"></span>További adatok<span class="sec-arrow">▶</span></summary>
+        <div class="sec-inner">
+          <div class="row2">
+            <div><label class="fld">Születési idő</label><input data-k="birth" placeholder="1990. 01. 01."></div>
+            <div><label class="fld">Nemzetiség</label><input data-k="nationality" placeholder="magyar"></div>
+          </div>
+          <div class="row2">
+            <div><label class="fld">Vízum</label><input data-k="visa" placeholder="—"></div>
+            <div><label class="fld">Családi állapot</label><input data-k="marital" placeholder="nőtlen / hajadon"></div>
+          </div>
+          <label class="fld">Jogosítvány típusa</label><input data-k="license" placeholder="B / Könnyű jármű">
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary><span class="sec-dot"></span>Szakmai tapasztalat<span class="sec-arrow">▶</span></summary>
+        <div class="sec-inner"><div id="expList"></div>
+          <button class="add-btn" data-add="exp">+ Tapasztalat hozzáadása</button></div>
+      </details>
+
+      <details class="section" open>
+        <summary><span class="sec-dot"></span>Tanulmányok<span class="sec-arrow">▶</span></summary>
+        <div class="sec-inner"><div id="eduList"></div>
+          <button class="add-btn" data-add="edu">+ Tanulmány hozzáadása</button></div>
+      </details>
+
+      <details class="section">
+        <summary><span class="sec-dot"></span>Nyelvek<span class="sec-arrow">▶</span></summary>
+        <div class="sec-inner"><div id="langList"></div>
+          <button class="add-btn" data-add="lang">+ Nyelv hozzáadása</button></div>
+      </details>
+
+      <details class="section">
+        <summary><span class="sec-dot"></span>Készségek, képességek<span class="sec-arrow">▶</span></summary>
+        <div class="sec-inner"><div id="skillList"></div>
+          <button class="add-btn" data-add="skill">+ Készség hozzáadása</button></div>
+      </details>
+
+      <details class="section">
+        <summary><span class="sec-dot"></span>Hobbik<span class="sec-arrow">▶</span></summary>
+        <div class="sec-inner">
+          <label class="fld">Hobbik (vesszővel elválasztva)</label>
+          <textarea data-k="interests" placeholder="Tenisz, fotózás..."></textarea>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="preview-col">
+    <div class="preview-bar">A4 előnézet — élő frissítés</div>
+    <div class="preview-wrap">
+      <div class="scaler" id="scaler"><div class="cv" id="cvPage"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ACCENTS = ["#0d9488","#4f46e5","#334155","#be123c","#b45309","#047857"];
+
+const data = {
+  name:"", title:"", email:"", phone:"", address:"",
+  summary:"", birth:"", nationality:"", visa:"", marital:"", license:"",
+  interests:"", photo:"", accent:ACCENTS[0],
+  exp:[], edu:[], skill:[], lang:[]
+};
+
+const blank = {
+  exp:()=>({position:"",company:"",location:"",from:"",to:"",desc:""}),
+  edu:()=>({degree:"",school:"",location:"",from:"",to:"",desc:""}),
+  skill:()=>({name:""}),
+  lang:()=>({name:"",level:""})
+};
+
+async function save(){ try{ if(window.storage) await window.storage.set("cv_draft_v4", JSON.stringify(data)); }catch(e){} }
+async function load(){ try{ if(window.storage){ const r=await window.storage.get("cv_draft_v4"); if(r&&r.value) Object.assign(data,JSON.parse(r.value)); } }catch(e){} }
+
+function setAccent(c){ document.documentElement.style.setProperty("--accent",c); }
+
+function buildSwatches(){
+  const wrap=document.getElementById("swatches"); wrap.innerHTML="";
+  ACCENTS.forEach(c=>{
+    const s=document.createElement("div");
+    s.className="sw"+(c===data.accent?" active":""); s.style.background=c; s.style.color=c;
+    s.onclick=()=>{ data.accent=c; setAccent(c); buildSwatches(); render(); save(); };
+    wrap.appendChild(s);
+  });
+  const custom=document.createElement("input"); custom.type="color"; custom.value=data.accent;
+  custom.style.cssText="width:30px;height:30px;padding:0;border:none;background:none;cursor:pointer;border-radius:50%";
+  custom.oninput=e=>{ data.accent=e.target.value; setAccent(e.target.value); render(); save(); };
+  wrap.appendChild(custom);
+}
+
+document.querySelectorAll("[data-k]").forEach(el=>{
+  el.addEventListener("input",()=>{ data[el.dataset.k]=el.value; render(); save(); });
+});
+function syncSimpleFields(){
+  document.querySelectorAll("[data-k]").forEach(el=>{ el.value=data[el.dataset.k]||""; });
+  setAccent(data.accent);
+  document.getElementById("photoPrev").style.backgroundImage = data.photo?`url(${data.photo})`:"";
+}
+
+document.getElementById("photoInput").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{ data.photo=r.result; document.getElementById("photoPrev").style.backgroundImage=`url(${data.photo})`; render(); save(); };
+  r.readAsDataURL(f);
+});
+document.getElementById("photoClear").addEventListener("click",e=>{
+  e.preventDefault(); data.photo=""; document.getElementById("photoInput").value="";
+  document.getElementById("photoPrev").style.backgroundImage=""; render(); save();
+});
+
+const listIds={exp:"expList",edu:"eduList",skill:"skillList",lang:"langList"};
+document.querySelectorAll("[data-add]").forEach(b=>{
+  b.onclick=()=>{ const t=b.dataset.add; data[t].push(blank[t]()); renderEditorList(t); render(); save(); };
+});
+
+function field(label,val,oninput,ph){
+  const wrap=document.createElement("div");
+  const l=document.createElement("label"); l.className="fld"; l.textContent=label;
+  const i=document.createElement("input"); i.value=val||""; i.placeholder=ph||"";
+  i.addEventListener("input",()=>oninput(i.value));
+  wrap.appendChild(l); wrap.appendChild(i); return wrap;
+}
+
+function renderEditorList(type){
+  const host=document.getElementById(listIds[type]); host.innerHTML="";
+  data[type].forEach((item,idx)=>{
+    const card=document.createElement("div"); card.className="item-card";
+    const del=document.createElement("button"); del.className="del"; del.textContent="×";
+    del.onclick=()=>{ data[type].splice(idx,1); renderEditorList(type); render(); save(); };
+    card.appendChild(del);
+
+    if(type==="exp"||type==="edu"){
+      const isExp=type==="exp";
+      card.appendChild(field(isExp?"Pozíció":"Végzettség / szak", isExp?item.position:item.degree,
+        v=>{ if(isExp)item.position=v; else item.degree=v; render();save(); }, isExp?"Raktáros":"Természettudomány BA"));
+      card.appendChild(field(isExp?"Cég / vállalat":"Intézmény", isExp?item.company:item.school,
+        v=>{ if(isExp)item.company=v; else item.school=v; render();save(); }));
+      card.appendChild(field("Helyszín", item.location, v=>{item.location=v;render();save();},"Budapest"));
+      const r2=document.createElement("div"); r2.className="row2";
+      r2.appendChild(field("Kezdés", item.from, v=>{item.from=v;render();save();},isExp?"feb. 2018":"2012"));
+      r2.appendChild(field("Befejezés", item.to, v=>{item.to=v;render();save();},isExp?"Jelenleg":"(üres ha 1 év)"));
+      card.appendChild(r2);
+      const l=document.createElement("label"); l.className="fld"; l.textContent="Leírás";
+      const ta=document.createElement("textarea"); ta.value=item.desc||""; ta.placeholder="Feladatok, eredmények...";
+      ta.addEventListener("input",()=>{item.desc=ta.value;render();save();});
+      card.appendChild(l); card.appendChild(ta);
+    }
+    else if(type==="skill"){
+      card.appendChild(field("Készség / képesség", item.name, v=>{item.name=v;render();save();},"Pl. Csapatmunka"));
+    }
+    else if(type==="lang"){
+      const r2=document.createElement("div"); r2.className="row2";
+      r2.appendChild(field("Nyelv", item.name, v=>{item.name=v;render();save();},"Magyar"));
+      r2.appendChild(field("Szint (opcionális)", item.level, v=>{item.level=v;render();save();},"C1"));
+      card.appendChild(r2);
+    }
+    host.appendChild(card);
+  });
+}
+
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function dateRange(f,t){ if(!f&&!t) return ""; return esc(f)+(t?" – "+esc(t):""); }
+
+function render(){
+ try{
+  const d=data;
+
+  const personal=[
+    ["Születési idő",d.birth],["Nemzetiség",d.nationality],
+    ["Vízum",d.visa],["Családi állapot",d.marital]
+  ].filter(p=>p[1]).map(p=>`<div class="l-field"><div class="k">${esc(p[0])}</div><div class="v">${esc(p[1])}</div></div>`).join("");
+
+  const langs=d.lang.filter(l=>l.name).map(l=>
+    `<div class="l-lang"><span>${esc(l.name)}</span>${l.level?`<em>${esc(l.level)}</em>`:""}</div>`).join("");
+
+  const hobbies=d.interests?esc(d.interests.split(",").map(x=>x.trim()).filter(Boolean).join(", ")):"";
+
+  const left=`
+    ${d.photo?`<img class="l-photo" src="${d.photo}">`:""}
+    ${d.summary?`<div class="l-h">Rólam</div><div class="l-about">${esc(d.summary)}</div>`:""}
+    ${personal?`<div class="l-h">Személyes adatok</div>${personal}`:""}
+    ${langs?`<div class="l-h">Nyelvek</div>${langs}`:""}
+    ${d.license?`<div class="l-h">Jogosítvány</div><div class="l-field"><div class="k">Jogosítvány típusa</div><div class="v">${esc(d.license)}</div></div>`:""}
+    ${hobbies?`<div class="l-h">Hobbik</div><div class="l-hobbi">${hobbies}</div>`:""}`;
+
+  const ci=[];
+  if(d.address) ci.push(`<div class="r-ci"><span class="r-ic">⌖</span><span>${esc(d.address)}</span></div>`);
+  if(d.phone)   ci.push(`<div class="r-ci"><span class="r-ic">☎</span><span>${esc(d.phone)}</span></div>`);
+  if(d.email)   ci.push(`<div class="r-ci"><span class="r-ic">✉</span><span>${esc(d.email)}</span></div>`);
+
+  function entries(arr,kind){
+    const v=arr.filter(e=> (kind==="exp"?(e.position||e.company):(e.degree||e.school)) );
+    if(!v.length) return `<p class="empty-hint">Még nincs megadva.</p>`;
+    return v.map(e=>{
+      const company = kind==="exp"?e.company:e.school;
+      const title   = kind==="exp"?e.position:e.degree;
+      return `<div class="x-entry">
+        <div class="x-meta">
+          ${company?`<div class="x-company">${esc(company)}</div>`:""}
+          ${e.location?`<div class="x-place">${esc(e.location)}</div>`:""}
+          ${dateRange(e.from,e.to)?`<div class="x-date">${dateRange(e.from,e.to)}</div>`:""}
+        </div>
+        <div class="x-content">
+          <div class="x-title"><span class="dot"></span>${esc(title)||"&nbsp;"}</div>
+          ${e.desc?`<div class="x-desc">${esc(e.desc)}</div>`:""}
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  const skills=d.skill.filter(s=>s.name).map(s=>`<div class="r-skill">${esc(s.name)}</div>`).join("");
+
+  const right=`
+    <div class="r-header">
+      <div class="r-top">
+        <div>
+          <div class="r-name">${esc(d.name)||"A Te neved"}</div>
+          ${d.title?`<div class="r-title">${esc(d.title)}</div>`:""}
+        </div>
+        ${ci.length?`<div class="r-contact">${ci.join("")}</div>`:""}
+      </div>
+    </div>
+    <div class="r-h">Szakmai tapasztalat</div>${entries(d.exp,"exp")}
+    <div class="r-h">Tanulmányok</div>${entries(d.edu,"edu")}
+    ${skills?`<div class="r-h">Készségek, képességek</div><div class="r-skills">${skills}</div>`:""}`;
+
+  document.getElementById("cvPage").innerHTML=`<div class="cv-left">${left}</div><div class="cv-right">${right}</div>`;
+ }catch(err){ console.error("render hiba:",err); }
+ fit();
+}
+
+function fit(){
+  const scaler=document.getElementById("scaler"), page=document.getElementById("cvPage");
+  if(!scaler||!page) return;
+  const avail=scaler.parentElement.clientWidth-2, pageW=page.offsetWidth||794;
+  const scale=Math.min(1,avail/pageW);
+  scaler.style.transform=`scale(${scale})`;
+  scaler.style.height=(page.offsetHeight*scale)+"px";
+}
+window.addEventListener("resize",fit);
+
+document.getElementById("dlBtn").addEventListener("click",async()=>{
+  const btn=document.getElementById("dlBtn"), old=btn.textContent;
+  btn.textContent="Készül..."; btn.disabled=true;
+  const scaler=document.getElementById("scaler"), prev=scaler.style.transform;
+  scaler.style.transform="scale(1)";
+  const fname=(data.name?data.name.replace(/\s+/g,"_"):"oneletrajz")+"_CV.pdf";
+  try{
+    await html2pdf().set({
+      margin:0, filename:fname, image:{type:"jpeg",quality:.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff",windowWidth:794},
+      jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
+      pagebreak:{mode:["css","legacy"]}
+    }).from(document.getElementById("cvPage")).save();
+  }catch(e){ alert("Hiba a PDF generálásakor: "+e.message); }
+  scaler.style.transform=prev; fit(); btn.textContent=old; btn.disabled=false;
+});
+
+document.getElementById("sampleBtn").addEventListener("click",()=>{
+  Object.assign(data,{
+    name:"Herman Zsolt", title:"Raktáros",
+    email:"herman.zsolt@email.hu", phone:"06 00 000 0000",
+    address:"3483 Kápiszó, Hegedűs utca 12.\nBudapest, Magyarország",
+    summary:"Megbízható, gyakorlatias raktáros több éves tapasztalattal. Szeretem az átlátható, rendezett munkakörnyezetet, és gyorsan tanulom meg az új rendszereket.",
+    birth:"1990. 01. 01.", nationality:"magyar", visa:"—", marital:"nőtlen", license:"B / Könnyű jármű",
+    interests:"Tenisz, Fotózás, Túrázás",
+    exp:[
+      {position:"Raktáros",company:"Vállalat neve 1",location:"Budapest",from:"feb. 2018",to:"Jelenleg",desc:"Készletek átvétele és kiadása, leltározás, targoncás anyagmozgatás és a raktárrend fenntartása."},
+      {position:"Raktáros",company:"Vállalat neve 2",location:"Budapest",from:"jan. 2016",to:"jan. 2018",desc:"Beérkező áru ellenőrzése, komissiózás, szállítólevelek kezelése."},
+      {position:"Raktáros",company:"Vállalat neve 3",location:"Budapest",from:"jan. 2013",to:"dec. 2015",desc:"Csomagolás, címkézés, kiszállítás előkészítése."}
+    ],
+    edu:[
+      {degree:"Természettudomány BA",school:"Tanulmányi központ 1",location:"Budapest",from:"2012",to:"",desc:"Alapszintű természettudományos képzés."},
+      {degree:"Középiskolai bizonyítvány",school:"Tanulmányi központ 2",location:"Budapest",from:"2009",to:"",desc:"Érettségi vizsga."},
+      {degree:"Logisztikai tanfolyam",school:"Tanulmányi központ 3",location:"Budapest",from:"2006",to:"",desc:"Raktározási és logisztikai alapok."}
+    ],
+    skill:[{name:"Targoncavezetés"},{name:"Leltározás"},{name:"Csapatmunka"},{name:"Pontosság"},{name:"Komissiózás"},{name:"Számítógépes ismeretek"}],
+    lang:[{name:"Magyar",level:"anyanyelv"},{name:"Angol",level:"B2"},{name:"Francia",level:"A2"}]
+  });
+  refreshAll();
+});
+
+document.getElementById("clearBtn").addEventListener("click",()=>{
+  if(!confirm("Biztosan törlöd az összes mezőt?")) return;
+  Object.assign(data,{name:"",title:"",email:"",phone:"",address:"",summary:"",birth:"",nationality:"",visa:"",marital:"",license:"",interests:"",photo:"",exp:[],edu:[],skill:[],lang:[]});
+  refreshAll();
+});
+
+function refreshAll(){
+  syncSimpleFields();
+  ["exp","edu","skill","lang"].forEach(renderEditorList);
+  buildSwatches(); render(); save();
+}
+
+(async()=>{ await load(); refreshAll(); })();
+</script>
+</body>
+</html>
