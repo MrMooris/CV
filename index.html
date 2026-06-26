@@ -80,8 +80,8 @@
   .cv-left{padding:14mm 9mm 14mm 11mm;width:60mm;flex-shrink:0;background:#f8f9fa}
   .cv-right{padding:14mm 13mm 14mm 12mm;flex:1;min-width:0}
 
-  .l-photo{width:32mm;height:32mm;border-radius:50%;object-fit:cover;display:block;margin:0 auto 8mm;
-    border:3px solid #fff;box-shadow:0 0 0 1px #e5e7eb;background:#eef0f2}
+  .l-photo{width:32mm;height:32mm;border-radius:50%;background-size:cover;background-position:center;
+    background-repeat:no-repeat;background-color:#eef0f2;display:block;margin:0 auto 8mm;border:2px solid #e8eaed}
   .l-h{color:var(--accent);font-size:9pt;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin:8mm 0 3mm}
   .l-h:first-of-type{margin-top:0}
   .l-h::after{content:"";display:block;width:8mm;height:2px;background:var(--accent);margin-top:1.5mm;border-radius:2px;opacity:.9}
@@ -118,8 +118,10 @@
   .x-title .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-right:7px}
   .x-desc{color:#6b7280;font-size:8.8pt;margin-top:1.6mm;white-space:pre-line;line-height:1.55}
 
-  .r-skills{display:flex;flex-wrap:wrap;justify-content:space-between}
-  .r-skill{width:47%;font-size:8.8pt;color:#4b5563;padding-bottom:1.8mm;margin-bottom:1mm;border-bottom:1px solid #ececec;display:flex;align-items:center}
+  .r-skills{display:flex}
+  .r-skcol{flex:1;min-width:0}
+  .r-skcol:first-child{margin-right:7mm}
+  .r-skill{font-size:8.8pt;color:#4b5563;padding-bottom:1.8mm;margin-bottom:1mm;border-bottom:1px solid #ececec;display:flex;align-items:center}
   .r-skill::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-right:7px}
   .empty-hint{color:#c4c4c4;font-style:italic;font-size:8.8pt}
 
@@ -363,7 +365,7 @@ function render(){
   const hobbies=d.interests?esc(d.interests.split(",").map(x=>x.trim()).filter(Boolean).join(", ")):"";
 
   const left=`
-    ${d.photo?`<img class="l-photo" src="${d.photo}">`:""}
+    ${d.photo?`<div class="l-photo" style="background-image:url(${d.photo})"></div>`:""}
     ${d.summary?`<div class="l-h">Rólam</div><div class="l-about">${esc(d.summary)}</div>`:""}
     ${personal?`<div class="l-h">Személyes adatok</div>${personal}`:""}
     ${langs?`<div class="l-h">Nyelvek</div>${langs}`:""}
@@ -395,7 +397,13 @@ function render(){
     }).join("");
   }
 
-  const skills=d.skill.filter(s=>s.name).map(s=>`<div class="r-skill">${esc(s.name)}</div>`).join("");
+  const sk=d.skill.filter(s=>s.name);
+  let skillsHtml="";
+  if(sk.length){
+    const c0=[],c1=[];
+    sk.forEach((s,i)=>{ (i%2===0?c0:c1).push(`<div class="r-skill">${esc(s.name)}</div>`); });
+    skillsHtml=`<div class="r-h">Készségek, képességek</div><div class="r-skills"><div class="r-skcol">${c0.join("")}</div><div class="r-skcol">${c1.join("")}</div></div>`;
+  }
 
   const right=`
     <div class="r-header">
@@ -410,7 +418,7 @@ function render(){
     </div>
     <div class="r-h">Szakmai tapasztalat</div>${entries(d.exp,"exp")}
     <div class="r-h">Tanulmányok</div>${entries(d.edu,"edu")}
-    ${skills?`<div class="r-h">Készségek, képességek</div><div class="r-skills">${skills}</div>`:""}`;
+    ${skillsHtml}`;
 
   document.getElementById("cvPage").innerHTML=`<div class="cv-left">${left}</div><div class="cv-right">${right}</div>`;
  }catch(err){ console.error("render hiba:",err); }
