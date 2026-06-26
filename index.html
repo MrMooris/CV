@@ -73,12 +73,12 @@
 
   /* ===== CV (A4) — modern, kétoszlopos ===== */
   .cv{width:210mm;min-height:297mm;background:#fff;color:#374151;
-    display:grid;grid-template-columns:60mm 1fr;
+    display:flex;align-items:stretch;
     box-shadow:0 12px 40px rgba(0,0,0,.4);
     font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:9.8pt;line-height:1.55}
 
-  .cv-left{background:#f8f9fa;padding:14mm 9mm 14mm 11mm}
-  .cv-right{padding:14mm 13mm 14mm 12mm}
+  .cv-left{padding:14mm 9mm 14mm 11mm;width:60mm;flex-shrink:0;background:#f8f9fa}
+  .cv-right{padding:14mm 13mm 14mm 12mm;flex:1;min-width:0}
 
   .l-photo{width:32mm;height:32mm;border-radius:50%;object-fit:cover;display:block;margin:0 auto 8mm;
     border:3px solid #fff;box-shadow:0 0 0 1px #e5e7eb;background:#eef0f2}
@@ -97,27 +97,30 @@
   .r-top{display:flex;justify-content:space-between;gap:8mm;align-items:flex-start}
   .r-name{font-size:19pt;font-weight:600;letter-spacing:.5px;color:#1f2937;line-height:1.15}
   .r-title{font-size:9.5pt;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-top:2mm;font-weight:600}
-  .r-contact{font-size:8.3pt;color:#6b7280;display:flex;flex-direction:column;gap:2.4mm;min-width:46mm;max-width:60mm}
-  .r-ci{display:flex;gap:7px;align-items:flex-start}
+  .r-applied{margin-top:2.5mm;font-size:9pt;color:#6b7280}
+  .r-applied b{color:#1f2937;font-weight:600}
+  .r-contact{font-size:8.3pt;color:#6b7280;display:flex;flex-direction:column;min-width:46mm;max-width:60mm}
+  .r-ci{display:flex;align-items:flex-start;margin-bottom:2.4mm}
   .r-ic{width:14px;height:14px;border-radius:50%;background:var(--accent);color:#fff;font-size:8px;
-    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;margin-right:7px}
   .r-ci span{white-space:pre-line;word-break:break-word;line-height:1.4}
 
   .r-h{font-size:10pt;font-weight:700;color:#1f2937;text-transform:uppercase;letter-spacing:1.5px;
-    margin:8mm 0 4.5mm;display:flex;align-items:center;gap:8px}
-  .r-h::before{content:"";width:4mm;height:2.5px;background:var(--accent);border-radius:2px;flex-shrink:0}
-  .r-h::after{content:"";flex:1;height:1px;background:#ececec}
+    margin:8mm 0 4.5mm;padding-bottom:2mm;border-bottom:1px solid #e8eaed;display:flex;align-items:center}
+  .r-h::before{content:"";width:4mm;height:2.5px;background:var(--accent);border-radius:2px;flex-shrink:0;margin-right:8px}
 
-  .x-entry{display:grid;grid-template-columns:30mm 1fr;gap:6mm;margin-bottom:6mm;page-break-inside:avoid}
+  .x-entry{display:flex;margin-bottom:6mm;page-break-inside:avoid}
+  .x-meta{width:30mm;flex-shrink:0;margin-right:6mm}
+  .x-content{flex:1;min-width:0}
   .x-company{font-weight:600;color:#374151;font-size:9.2pt;line-height:1.3}
   .x-place,.x-date{font-size:8.2pt;color:#9ca3af;margin-top:1mm}
-  .x-title{font-weight:600;color:#1f2937;font-size:9.8pt;display:flex;align-items:center;gap:7px}
-  .x-title .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .x-title{font-weight:600;color:#1f2937;font-size:9.8pt;display:flex;align-items:center}
+  .x-title .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-right:7px}
   .x-desc{color:#6b7280;font-size:8.8pt;margin-top:1.6mm;white-space:pre-line;line-height:1.55}
 
-  .r-skills{display:grid;grid-template-columns:1fr 1fr;gap:2.6mm 9mm}
-  .r-skill{font-size:8.8pt;color:#4b5563;padding-bottom:1.8mm;border-bottom:1px solid #ececec;display:flex;align-items:center;gap:7px}
-  .r-skill::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .r-skills{display:flex;flex-wrap:wrap;justify-content:space-between}
+  .r-skill{width:47%;font-size:8.8pt;color:#4b5563;padding-bottom:1.8mm;margin-bottom:1mm;border-bottom:1px solid #ececec;display:flex;align-items:center}
+  .r-skill::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-right:7px}
   .empty-hint{color:#c4c4c4;font-style:italic;font-size:8.8pt}
 
   ::-webkit-scrollbar{width:10px;height:10px}
@@ -150,6 +153,7 @@
           </div>
           <label class="fld">Teljes név</label><input data-k="name" placeholder="Herman Zsolt">
           <label class="fld">Pozíció / titulus</label><input data-k="title" placeholder="Raktáros">
+          <label class="fld">Megpályázott pozíció</label><input data-k="applied" placeholder="Pl. Raktárvezető">
           <div class="row2">
             <div><label class="fld">E-mail</label><input data-k="email" placeholder="nev@email.hu"></div>
             <div><label class="fld">Telefon</label><input data-k="phone" placeholder="06 00 000 0000"></div>
@@ -231,7 +235,7 @@
 const ACCENTS = ["#0d9488","#4f46e5","#334155","#be123c","#b45309","#047857"];
 
 const data = {
-  name:"", title:"", email:"", phone:"", address:"",
+  name:"", title:"", applied:"", email:"", phone:"", address:"",
   summary:"", birth:"", nationality:"", visa:"", marital:"", license:"",
   interests:"", photo:"", accent:ACCENTS[0],
   exp:[], edu:[], skill:[], lang:[]
@@ -248,6 +252,15 @@ async function save(){ try{ if(window.storage) await window.storage.set("cv_draf
 async function load(){ try{ if(window.storage){ const r=await window.storage.get("cv_draft_v4"); if(r&&r.value) Object.assign(data,JSON.parse(r.value)); } }catch(e){} }
 
 function setAccent(c){ document.documentElement.style.setProperty("--accent",c); }
+
+function tintBg(hex){
+  try{
+    const h=(hex||"#0d9488").replace("#","");
+    const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+    const m=v=>Math.round(v+(255-v)*0.90);
+    return `rgb(${m(r)},${m(g)},${m(b)})`;
+  }catch(e){ return "#f8f9fa"; }
+}
 
 function buildSwatches(){
   const wrap=document.getElementById("swatches"); wrap.innerHTML="";
@@ -390,6 +403,7 @@ function render(){
         <div>
           <div class="r-name">${esc(d.name)||"A Te neved"}</div>
           ${d.title?`<div class="r-title">${esc(d.title)}</div>`:""}
+          ${d.applied?`<div class="r-applied">Megpályázott pozíció: <b>${esc(d.applied)}</b></div>`:""}
         </div>
         ${ci.length?`<div class="r-contact">${ci.join("")}</div>`:""}
       </div>
@@ -416,23 +430,34 @@ window.addEventListener("resize",fit);
 document.getElementById("dlBtn").addEventListener("click",async()=>{
   const btn=document.getElementById("dlBtn"), old=btn.textContent;
   btn.textContent="Készül..."; btn.disabled=true;
-  const scaler=document.getElementById("scaler"), prev=scaler.style.transform;
-  scaler.style.transform="scale(1)";
+
+  // tiszta, teljes méretű másolat rögzítése (nem a kicsinyített előnézet)
+  const src=document.getElementById("cvPage");
+  const holder=document.createElement("div");
+  holder.style.cssText="position:fixed;left:-10000px;top:0;width:210mm;background:#fff;z-index:-1";
+  const clone=src.cloneNode(true);
+  clone.style.boxShadow="none";
+  clone.style.transform="none";
+  holder.appendChild(clone);
+  document.body.appendChild(holder);
+
   const fname=(data.name?data.name.replace(/\s+/g,"_"):"oneletrajz")+"_CV.pdf";
   try{
     await html2pdf().set({
       margin:0, filename:fname, image:{type:"jpeg",quality:.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff",windowWidth:794},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
       jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
       pagebreak:{mode:["css","legacy"]}
-    }).from(document.getElementById("cvPage")).save();
+    }).from(clone).save();
   }catch(e){ alert("Hiba a PDF generálásakor: "+e.message); }
-  scaler.style.transform=prev; fit(); btn.textContent=old; btn.disabled=false;
+
+  document.body.removeChild(holder);
+  btn.textContent=old; btn.disabled=false;
 });
 
 document.getElementById("sampleBtn").addEventListener("click",()=>{
   Object.assign(data,{
-    name:"Herman Zsolt", title:"Raktáros",
+    name:"Herman Zsolt", title:"Raktáros", applied:"Raktárvezető",
     email:"herman.zsolt@email.hu", phone:"06 00 000 0000",
     address:"3483 Kápiszó, Hegedűs utca 12.\nBudapest, Magyarország",
     summary:"Megbízható, gyakorlatias raktáros több éves tapasztalattal. Szeretem az átlátható, rendezett munkakörnyezetet, és gyorsan tanulom meg az új rendszereket.",
@@ -456,7 +481,7 @@ document.getElementById("sampleBtn").addEventListener("click",()=>{
 
 document.getElementById("clearBtn").addEventListener("click",()=>{
   if(!confirm("Biztosan törlöd az összes mezőt?")) return;
-  Object.assign(data,{name:"",title:"",email:"",phone:"",address:"",summary:"",birth:"",nationality:"",visa:"",marital:"",license:"",interests:"",photo:"",exp:[],edu:[],skill:[],lang:[]});
+  Object.assign(data,{name:"",title:"",applied:"",email:"",phone:"",address:"",summary:"",birth:"",nationality:"",visa:"",marital:"",license:"",interests:"",photo:"",exp:[],edu:[],skill:[],lang:[]});
   refreshAll();
 });
 
